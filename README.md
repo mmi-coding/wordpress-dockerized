@@ -46,11 +46,11 @@ This section sets up the MySQL container for the WordPress database. Adjust the 
 
 ### WordPress Container
 
-\```yaml
+```yaml
 wordpress:
   image: wordpress:latest
   ...
-\```
+```
 
 This container runs the latest version of WordPress. The `command` section is responsible for setting up the core WordPress installation and adding the desired plugins and theme. Make sure to update the plugins and theme details in the `.env` file.
 
@@ -60,11 +60,11 @@ This container runs the latest version of WordPress. The `command` section is re
 
 ### NGINX Proxy Container
 
-\```yaml
+```yaml
 nginx-proxy:
   image: jwilder/nginx-proxy
   ...
-\```
+```
 
 This container serves as a gateway, directing incoming traffic to the appropriate containers. It also references a `custom_cache.conf` file, which provides custom cache configurations for performance improvements.
 
@@ -74,11 +74,11 @@ This container serves as a gateway, directing incoming traffic to the appropriat
 
 ### Let's Encrypt Companion Container
 
-\```yaml
+```yaml
 letsencrypt-companion:
   image: jrcs/letsencrypt-nginx-proxy-companion
   ...
-\```
+```
 
 This section sets up the SSL for your domain using Let's Encrypt. Ensure that you've set your domain and contact email correctly in the `.env` file for certificate issuance and renewal notifications.
 
@@ -88,11 +88,11 @@ This section sets up the SSL for your domain using Let's Encrypt. Ensure that yo
 
 ### Watchtower Container
 
-\```yaml
+```yaml
 watchtower:
   image: containrrr/watchtower
   ...
-\```
+```
 
 Watchtower will monitor your containers and automatically update them if there's a newer version of their base image available. This ensures your applications stay up-to-date with the latest security and feature updates.
 
