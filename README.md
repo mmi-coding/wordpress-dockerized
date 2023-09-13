@@ -32,11 +32,11 @@ This setup aims to deploy a secure and efficient WordPress environment, utilizin
 
 ### MySQL Container
 
-\```yaml
+```yaml
 db:
   image: mysql:5.7
   ...
-\```
+```
 
 This section sets up the MySQL container for the WordPress database. Adjust the environment variables like `MYSQL_ROOT_PASSWORD`, `MYSQL_DATABASE`, etc., in the `.env` file to match your desired settings.
 
