@@ -1,4 +1,4 @@
-# Application Documentation: Dockerized WordPress with Nginx
+# Dockerized WordPress with Nginx / SSL / Automatic Container Updates
 
 ## Overview
 
