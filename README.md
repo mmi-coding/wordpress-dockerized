@@ -4,6 +4,24 @@
 
 This application provides a Dockerized WordPress environment, complete with an Nginx reverse proxy, automatic SSL certificate generation via Let's Encrypt, and Brotli compression. Docker Compose orchestrates the multi-container setup.
 
+## Requirements
+
+Before diving into the setup and configuration, ensure you have the following prerequisites:
+
+1. **Docker**: Docker is a platform that allows developers to create, deploy, and run applications in containers. Containers are lightweight, standalone, and provide a consistent environment across different stages of development. [Download and install Docker](https://www.docker.com/get-started) for your operating system.
+
+2. **Docker Compose**: Docker Compose is a tool for defining and running multi-container Docker applications. It uses a YAML file (like our `docker-compose.yml`) to configure the application's services, networks, and volumes. [Install Docker Compose](https://docs.docker.com/compose/install/) if it's not included in your Docker installation.
+
+3. **Git** (Optional): If you plan to clone a repository or use version control, ensure you have Git installed. [Download and install Git](https://git-scm.com/downloads).
+
+4. **Text Editor**: You'll need a text editor to modify configuration files. Popular choices include [Visual Studio Code](https://code.visualstudio.com/), [Sublime Text](https://www.sublimetext.com/), or [Atom](https://atom.io/).
+
+5. **Domain Name** (For SSL): If you intend to use the `letsencrypt-companion` service to secure your application with SSL, you'll need a registered domain name pointing to your server.
+
+6. **Basic Knowledge**: Familiarity with basic terminal or command-line operations will be beneficial. Additionally, understanding the basics of Docker, Nginx, and WordPress can help troubleshoot or customize the setup further.
+
+Once you have these requirements in place, you can proceed with the setup and configuration of the Dockerized WordPress environment.
+
 ## Table of Contents
 
 1. [Directory Structure](#directory-structure)
@@ -14,7 +32,6 @@ This application provides a Dockerized WordPress environment, complete with an N
 6. [Nginx Dockerfile](#nginx-dockerfile)
 7. [WordPress Dockerfile](#wordpress-dockerfile)
 
----
 
 ## 1. Directory Structure
 
