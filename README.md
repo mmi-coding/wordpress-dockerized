@@ -1,80 +1,74 @@
-# WordPress Docker Setup Guide
+# Application Documentation: Dockerized WordPress with Nginx
 
-ATTENTION : Project Still Under Dev
+## Overview
 
-This guide provides an in-depth overview of setting up a WordPress site using Docker with an NGINX reverse proxy, SSL by Let's Encrypt, and automated container updates via Watchtower.
+This application provides a Dockerized WordPress environment, complete with an Nginx reverse proxy, automatic SSL certificate generation via Let's Encrypt, and Brotli compression. Docker Compose orchestrates the multi-container setup.
 
 ## Table of Contents
-- [Introduction](#introduction)
-- [Prerequisites](#prerequisites)
-- [Database Configuration](#database-configuration)
-- [WordPress Setup](#wordpress-setup)
-- [NGINX Reverse Proxy](#nginx-reverse-proxy)
-- [SSL with Let's Encrypt](#ssl-with-lets-encrypt)
-- [Automated Container Updates with Watchtower](#automated-container-updates-with-watchtower)
-- [Usage and Deployment](#usage-and-deployment)
-- [Conclusion and Recommendations](#conclusion-and-recommendations)
+
+1. [Directory Structure](#directory-structure)
+2. [Docker Compose Configuration](#docker-compose-configuration)
+3. [WordPress Setup Script](#wordpress-setup-script)
+4. [Environment Variables](#environment-variables)
+5. [Nginx Compression Configuration](#nginx-compression-configuration)
+6. [Nginx Dockerfile](#nginx-dockerfile)
+7. [WordPress Dockerfile](#wordpress-dockerfile)
 
 ---
 
-## Introduction
+## 1. Directory Structure
 
-This setup aims to deploy a secure and efficient WordPress environment, utilizing containers for modularity and ease of management.
+The application is organized into several directories and files. Here's a breakdown:
+
+```
+.
+├── README.md
+├── docker-compose.yml
+├── nginx
+│   ├── Dockerfile
+│   ├── certs
+│   ├── compression.conf
+│   ├── conf.d
+│   ├── html
+│   ├── templates
+│   │   └── nginx.tmpl
+│   └── vhost.d
+├── setup-wordpress.sh
+└── wordpress
+    └── Dockerfile
+```
 
 ---
 
-## Prerequisites
+## 2. Docker Compose Configuration
 
-- Docker and Docker Compose installed on your server.
-- A domain pointing to your server for SSL configuration.
+The `docker-compose.yml` file orchestrates the application's services. Here's a step-by-step breakdown:
 
----
+### 2.1 Nginx Service
 
-## Database Configuration
-
-### MySQL Container
+This is the main Nginx reverse proxy container. It's built from a custom Dockerfile located in the `nginx` directory.
 
 ```yaml
-db:
-  image: mysql:5.7
+nginx:
+  build:
+    context: .
+    dockerfile: nginx/Dockerfile
   ...
 ```
 
-This section sets up the MySQL container for the WordPress database. Adjust the environment variables like `MYSQL_ROOT_PASSWORD`, `MYSQL_DATABASE`, etc., in the `.env` file to match your desired settings.
+### 2.2 Nginx-gen Service
 
----
-
-## WordPress Setup
-
-### WordPress Container
+Generates Nginx configurations dynamically. It uses the `jwilder/docker-gen` image.
 
 ```yaml
-wordpress:
-  image: wordpress:latest
+nginx-gen:
+  image: jwilder/docker-gen
   ...
 ```
 
-This container runs the latest version of WordPress. The `command` section is responsible for setting up the core WordPress installation and adding the desired plugins and theme. Make sure to update the plugins and theme details in the `.env` file.
+### 2.3 Letsencrypt-companion Service
 
----
-
-## NGINX Reverse Proxy
-
-### NGINX Proxy Container
-
-```yaml
-nginx-proxy:
-  image: jwilder/nginx-proxy
-  ...
-```
-
-This container serves as a gateway, directing incoming traffic to the appropriate containers. It also references a `custom_cache.conf` file, which provides custom cache configurations for performance improvements.
-
----
-
-## SSL with Let's Encrypt
-
-### Let's Encrypt Companion Container
+This service manages SSL certificates for your domains.
 
 ```yaml
 letsencrypt-companion:
@@ -82,32 +76,113 @@ letsencrypt-companion:
   ...
 ```
 
-This section sets up the SSL for your domain using Let's Encrypt. Ensure that you've set your domain and contact email correctly in the `.env` file for certificate issuance and renewal notifications.
+### 2.4 Database Service
 
----
-
-## Automated Container Updates with Watchtower
-
-### Watchtower Container
+The MySQL database service for WordPress.
 
 ```yaml
-watchtower:
-  image: containrrr/watchtower
+db:
+  image: mysql:5.7
   ...
 ```
 
-Watchtower will monitor your containers and automatically update them if there's a newer version of their base image available. This ensures your applications stay up-to-date with the latest security and feature updates.
+### 2.5 WordPress Service
+
+The main WordPress container, built from a custom Dockerfile.
+
+```yaml
+wordpress:
+  build:
+    context: .
+    dockerfile: wordpress/Dockerfile
+  ...
+```
+
+[Full docker-compose.yml](./docker-compose.yml)
 
 ---
 
-## Usage and Deployment
+## 3. WordPress Setup Script
 
-1. Clone the repository.
-2. Adjust the `.env` file with your specific configurations such as domain, email, WordPress plugins, and theme.
-3. If custom cache settings are desired for NGINX, modify the `custom_cache.conf` and ensure it's placed in the same directory as the `docker-compose.yml`.
-4. Start the containers with `docker-compose up -d`.
+The `setup-wordpress.sh` script automates the WordPress setup:
+
+1. **Wait for MySQL**: The script first ensures the MySQL server is ready.
+2. **Download and Install WordPress**: If WordPress isn't already installed, it's downloaded and set up.
+3. **Theme and Plugin Management**: The script installs the specified theme and plugins.
+
+```bash
+# Wait for MySQL to be ready
+while ! mysqladmin ping -h"db" --silent; do
+    sleep 1
+done
+...
+```
+
+[Full setup-wordpress.sh](./setup-wordpress.sh)
+
 ---
 
-## Conclusion and Recommendations
+## 4. Environment Variables
 
-This setup offers a modular and secure way to deploy WordPress. Regularly back up your database and WordPress files. Also, keep an eye on container logs for any potential issues.
+The `.env` file contains environment variables:
+
+```plaintext
+MYSQL_ROOT_PASSWORD=wordpress
+VIRTUAL_HOST=example.com 
+...
+```
+
+**Security Note**: Always keep `.env` secure. Avoid committing sensitive data to public repositories.
+
+---
+
+## 5. Nginx Compression Configuration
+
+The `compression.conf` file sets up Brotli and Gzip compression:
+
+```nginx
+# Brotli settings
+brotli on;
+...
+# Gzip settings
+gzip on;
+...
+```
+
+This ensures efficient content delivery.
+
+---
+
+## 6. Nginx Dockerfile
+
+This Dockerfile builds the Nginx image with Brotli compression support:
+
+```Dockerfile
+FROM nginx:alpine
+...
+RUN git clone https://github.com/google/ngx_brotli.git
+...
+```
+
+[Full Nginx Dockerfile](./nginx/Dockerfile)
+
+---
+
+## 7. WordPress Dockerfile
+
+This Dockerfile sets up the WordPress environment:
+
+```Dockerfile
+FROM wordpress:latest
+...
+RUN curl -O https://raw.githubusercontent.com/wp-cli/builds/gh-pages/phar/wp-cli.phar
+...
+```
+
+[Full WordPress Dockerfile](./wordpress/Dockerfile)
+
+---
+
+## Conclusion
+
+This documentation provides a comprehensive overview of the Dockerized WordPress setup. Before deploying, adjust the `.env` file settings to match your environment. Always ensure the security of sensitive data.
