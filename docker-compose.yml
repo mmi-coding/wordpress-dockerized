@@ -1,0 +1,111 @@
+version: '3.7'
+
+services:
+  nginx:
+    build:
+      context: .
+      dockerfile: nginx/Dockerfile
+    container_name: nginx
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx/compression.conf:/etc/nginx/vhost.d/${VIRTUAL_HOST}_location
+      - ./nginx/conf.d:/etc/nginx/conf.d
+      - ./nginx/vhost.d:/etc/nginx/vhost.d
+      - ./nginx/html:/usr/share/nginx/html
+      - certs:/etc/nginx/certs:ro
+      - /var/run/docker.sock:/tmp/docker.sock:ro
+    restart: always
+    networks:
+      - webnetwork
+
+  nginx-gen:
+    image: jwilder/docker-gen
+    container_name: nginx-gen
+    volumes_from:
+      - nginx
+    volumes:
+      - ./nginx/templates/nginx.tmpl:/etc/docker-gen/templates/nginx.tmpl:ro
+      - /var/run/docker.sock:/tmp/docker.sock:ro
+    command: -notify-sighup nginx -watch /etc/docker-gen/templates/nginx.tmpl /etc/nginx/conf.d/default.conf
+    networks:
+      - webnetwork
+
+  letsencrypt-companion:
+    image: jrcs/letsencrypt-nginx-proxy-companion
+    container_name: letsencrypt-companion
+    volumes_from:
+      - nginx
+    volumes:
+      - certs:/etc/nginx/certs:rw
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    environment:
+      - NGINX_DOCKER_GEN_CONTAINER=nginx-gen
+      - NGINX_PROXY_CONTAINER=nginx
+    depends_on:
+      - nginx-gen
+    networks:
+      - webnetwork
+
+  db:
+    image: mysql:5.7
+    container_name: db
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      MYSQL_DATABASE: ${MYSQL_DATABASE}
+      MYSQL_USER: ${MYSQL_USER}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+    volumes:
+      - db_data:/var/lib/mysql
+    restart: always
+    networks:
+      - webnetwork
+
+  wordpress:
+    depends_on:
+      - db
+    build:
+      context: .
+      dockerfile: wordpress/Dockerfile
+    container_name: wordpress
+    environment:
+      MYSQL_HOST: db:3306
+      MYSQL_USER: ${MYSQL_USER}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+      MYSQL_DATABASE: ${MYSQL_DATABASE}
+      VIRTUAL_HOST: ${VIRTUAL_HOST}
+      VIRTUAL_PORT: ${VIRTUAL_PORT}
+      LETSENCRYPT_HOST: ${VIRTUAL_HOST}
+      LETSENCRYPT_EMAIL: ${LETSENCRYPT_EMAIL}
+      LETSENCRYPT_TEST: ${LETSENCRYPT_TEST}
+      THEME_NAME: ${THEME_NAME}
+      PLUGINS: ${PLUGINS}
+      LOCALE: ${LOCALE}
+      SITE_TITLE: ${SITE_TITLE}
+      WP_USER: ${WP_USER}
+      WP_PASSWORD: ${WP_PASSWORD}
+      WP_EMAIL: ${WP_EMAIL}
+    volumes:
+      - wordpress_data:/var/www/html
+      - ./setup-wordpress.sh:/usr/local/bin/setup-wordpress.sh
+    command: /bin/bash -c "if [ ! -f /var/www/html/.setup_complete ]; then chmod +x /usr/local/bin/setup-wordpress.sh && /usr/local/bin/setup-wordpress.sh && touch /var/www/html/.setup_complete; fi && docker-entrypoint.sh apache2-foreground"
+    restart: unless-stopped
+    networks:
+      - webnetwork
+
+  watchtower:
+    image: containrrr/watchtower
+    container_name: watchtower
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    command: --interval 43200 # 12 hours
+
+networks:
+  webnetwork:
+    driver: bridge
+
+volumes:
+  db_data:
+  wordpress_data:
+  certs:
