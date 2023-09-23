@@ -187,11 +187,11 @@ Dockerizing MySQL offers several advantages:
 **Configuration in our setup:**  
 In the `docker-compose.yml`, the `db` service is defined as:
 
-\```yaml
+```yaml
 db:
   image: mysql:5.7
   ...
-\```
+```
 
 Here's a breakdown:
 
