@@ -410,4 +410,4 @@ This documentation provides a comprehensive overview of the Dockerized WordPress
 
 10. **Regular Audits**: Periodically audit your site for vulnerabilities. There are plugins and external services available that can scan your WordPress site and provide security recommendations.
 
-Remember, security and performance are ongoing concerns. Regularly review and update your setup to adapt to new challenges and requirements.
+
